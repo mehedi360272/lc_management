@@ -33,6 +33,8 @@ class LetterOfCredit(models.Model):
     expiry_date = fields.Date(string="Expiry Date", required=True)
     po_ids = fields.Many2many('purchase.order', string="Linked Purchase Orders")
     bill_ids = fields.One2many('account.move', 'lc_id', string="Vendor Bills")
+    landed_cost_ids = fields.One2many('stock.landed.cost', 'lc_id', string="Landed Costs")
+
     # document = fields.Binary(string="Document")
     document = fields.Many2many('ir.attachment', string='Attachments')
     status = fields.Selection([
@@ -54,15 +56,16 @@ class LetterOfCredit(models.Model):
     def action_close(self):
         self.status = 'closed'
 
-    count_po = fields.Integer(string="PO Count", compute="_compute_count_po_bill")
-    count_bill = fields.Integer(string="Bill Count", compute="_compute_count_po_bill")
+    count_po = fields.Integer(string="PO Count", compute="_compute_counts")
+    count_bill = fields.Integer(string="Bill Count", compute="_compute_counts")
+    count_landed_cost = fields.Integer(string="Landed Cost Count", compute="_compute_counts")
 
-    @api.depends('po_ids', 'bill_ids')
-    def _compute_count_po_bill(self):
+    @api.depends('po_ids', 'bill_ids', 'landed_cost_ids')
+    def _compute_counts(self):
         for rec in self:
             rec.count_po = len(rec.po_ids)
             rec.count_bill = len(rec.bill_ids)
-
+            rec.count_landed_cost = len(rec.landed_cost_ids)
 
     def action_view_purchase_orders(self):
         return {
@@ -82,6 +85,18 @@ class LetterOfCredit(models.Model):
             'res_model': 'account.move',
             'domain': [('id', 'in', self.bill_ids.ids)],
             'context': {'default_lc_id': self.id},
+        }
+
+    def action_view_landed_costs(self):
+        self.ensure_one()
+        return {
+            'name': 'Landed Costs',
+            'type': 'ir.actions.act_window',
+            'res_model': 'stock.landed.cost',
+            'view_mode': 'list,form',
+            'domain': [('lc_id', '=', self.id)],
+            'context': {'default_lc_id': self.id},
+            'target': 'current',
         }
 
     def action_create_purchase_order(self):

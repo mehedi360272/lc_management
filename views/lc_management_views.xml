@@ -30,7 +30,8 @@
                     <button name="action_create_purchase_order" type="object" string="Create PO" class="btn-primary"
                             icon="fa-plus"
                             invisible="status == 'closed' or status == 'draft'"/>
-                    <button name="action_create_landed_cost" type="object" string="Create Landed Cost" class="btn-primary"
+                    <button name="action_create_landed_cost" type="object" string="Create Landed Cost"
+                            class="btn-primary"
                             icon="fa-plus"
                             invisible="status == 'closed' or status == 'draft'"/>
                     <field name="status" widget="statusbar"/>
@@ -45,6 +46,12 @@
                         <button name="action_view_vendor_bills" type="object" class="oe_stat_button"
                                 icon="fa-dollar">
                             <field name="count_bill" widget="statinfo" string="Vendor Bills"/>
+                        </button>
+                        <button name="action_view_landed_costs"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-truck">
+                            <field name="count_landed_cost" widget="statinfo" string="Landed Costs"/>
                         </button>
                     </div>
                     <div class="oe_title">
