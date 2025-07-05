@@ -1,0 +1,78 @@
+<odoo>
+    <record id="view_lc_management_tree" model="ir.ui.view">
+        <field name="name">lc.management.tree</field>
+        <field name="model">lc.management</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="bank_id"/>
+                <field name="lc_amount"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lc_management_form" model="ir.ui.view">
+        <field name="name">lc.management.form</field>
+        <field name="model">lc.management</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button id="button_approve" name="action_approve" string="Approve" class="btn-primary" type="object"
+                            invisible="status != 'draft'"/>
+                    <button id="button_mark_as_open" name="action_mark_as_open" string="Mark as open"
+                            class="btn-primary" type="object"
+                            invisible="status != 'approved'"/>
+                    <button id="button_close" name="action_close" string="Close" class="btn-primary" type="object"
+                            invisible="status != 'open'"/>
+                    <button name="action_create_purchase_order" type="object" string="Create PO" class="btn-primary" icon="fa-plus"
+                    invisible="status == 'closed' or status == 'draft'"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_purchase_orders" type="object" class="oe_stat_button"
+                                icon="fa-shopping-cart">
+                            <field name="count_po" widget="statinfo" string="Purchase Orders"/>
+                        </button>
+                        <button name="action_view_vendor_bills" type="object" class="oe_stat_button"
+                                icon="fa-solid fa-dollar-sign">
+                            <field name="count_bill" widget="statinfo" string="Vendor Bills"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1 class="d-flex">
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="lc_type"/>
+                            <field name="lc_name"/>
+                            <field name="partner_id"/>
+                            <field name="open_date"/>
+                            <field name="expiry_date"/>
+                            <field name="bank_id"/>
+                            <field name="adv_bank"/>
+                        </group>
+                        <group>
+                            <field name="currency"/>
+                            <field name="lc_amount"/>
+                            <field name="dollar_rate"/>
+                            <field name="bdt_amount"/>
+                            <field name="margin_amount"/>
+                            <field name="document" filename="name"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_lc_management" model="ir.actions.act_window">
+        <field name="name">Letters of Credit</field>
+        <field name="res_model">lc.management</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

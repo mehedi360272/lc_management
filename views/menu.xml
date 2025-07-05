@@ -1,0 +1,8 @@
+<odoo>
+
+    <menuitem id="menu_lc_root" name="LC Management"/>
+    <menuitem id="menu_lc_main" name="Create LC" parent="menu_lc_root" action="action_lc_management"/>
+
+    <menuitem id="menu_lc_config" name="Configuration" parent="menu_lc_root"/>
+    <menuitem id="menu_lc_type" name="LC Type" parent="menu_lc_config" action="action_lc_type"/>
+</odoo>

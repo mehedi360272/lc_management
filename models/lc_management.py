@@ -1,0 +1,112 @@
+from email.policy import default
+
+from odoo import models, fields, api, _
+
+class LetterOfCredit(models.Model):
+    _name = 'lc.management'
+    _description = 'Letter of Credit'
+
+    name = fields.Char(string='Reference', default="New")
+    lc_name = fields.Char(string='LC Number', required=True)
+    lc_type = fields.Many2one('lc.type', string="LC Type")
+
+    partner_id = fields.Many2one('res.partner', string="Supplier", required=True)
+    bank_id = fields.Many2one('res.partner', string="Issuing Bank", required=True)
+    adv_bank = fields.Many2one('res.partner', string="Advising Bank", required=True)
+
+    currency = fields.Selection([
+        ('usd', 'USD'),
+        ('bdt', 'BDT')
+    ], string="Currency Type")
+
+    currency_id = fields.Many2one('res.currency', string="Currency")
+    lc_amount = fields.Monetary(string="Amount in FC", required=True)
+    dollar_rate = fields.Monetary(string="FC Rate in BDT", required=True)
+    bdt_amount = fields.Monetary(string="Amount in BDT", compute='_compute_bdt_amount', required=True)
+
+    @api.depends('lc_amount', 'dollar_rate')
+    def _compute_bdt_amount(self):
+        for record in self:
+            record.bdt_amount = record.lc_amount * record.dollar_rate if record.lc_amount and record.dollar_rate else 0.0
+
+    margin_amount = fields.Monetary(string="Margin (%)", required=True)
+    open_date = fields.Date(string="Opening Date", required=True)
+    expiry_date = fields.Date(string="Expiry Date", required=True)
+    po_ids = fields.Many2many('purchase.order', string="Linked Purchase Orders")
+    bill_ids = fields.One2many('account.move', 'lc_id', string="Vendor Bills")
+    document = fields.Binary(string="Document")
+    status = fields.Selection([
+        ('draft', 'Draft'),
+        ('approved', 'Approved'),
+        ('open', 'Open'),
+        ('closed', 'Closed')
+    ], default='draft', string="Status")
+
+    def action_approve(self):
+        for rec in self:
+            if rec.name == 'New':
+                rec.name = self.env['ir.sequence'].next_by_code('lc.management.sequence') or 'New'
+            rec.status = 'approved'
+
+    def action_mark_as_open(self):
+        self.status = 'open'
+
+    def action_close(self):
+        self.status = 'closed'
+
+    count_po = fields.Integer(string="PO Count", compute="_compute_count_po_bill")
+    count_bill = fields.Integer(string="Bill Count", compute="_compute_count_po_bill")
+
+    @api.depends('po_ids', 'bill_ids')
+    def _compute_count_po_bill(self):
+        for rec in self:
+            rec.count_po = len(rec.po_ids)
+            rec.count_bill = len(rec.bill_ids)
+
+
+    def action_view_purchase_orders(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Purchase Orders',
+            'view_mode': 'list,form',
+            'res_model': 'purchase.order',
+            'domain': [('id', 'in', self.po_ids.ids)],
+            'context': {'default_lc_id': self.id},
+        }
+
+    def action_view_vendor_bills(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Vendor Bills',
+            'view_mode': 'list,form',
+            'res_model': 'account.move',
+            'domain': [('id', 'in', self.bill_ids.ids)],
+            'context': {'default_lc_id': self.id},
+        }
+
+    def action_create_purchase_order(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Purchase Order',
+            'res_model': 'purchase.order',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'current',
+            'context': {
+                'default_partner_id': self.partner_id.id,
+                'default_currency_id': self.currency_id.id,
+                'default_lc_id': self.id,  # যদি PO-তে lc_id field থাকে
+            },
+        }
+
+
+class PurchaseOrder(models.Model):
+    _inherit = 'purchase.order'
+
+    lc_id = fields.Many2one('lc.management', string="Letter of Credit")
+
+class AccountMove(models.Model):
+    _inherit = 'account.move'
+
+    lc_id = fields.Many2one('lc.management', string="Letter of Credit")
