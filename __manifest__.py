@@ -5,7 +5,7 @@
     "summary": "Manage Letters of Credit (LCs) linked with Purchase Orders and Bills",
     "description": "Full LC workflow: tracking, accounting, linking to POs and bills.",
     "author": "Custom",
-    "depends": ["purchase", "account"],
+    "depends": ["purchase", "account", "stock_landed_costs"],
     "data": [
         # data
         "data/ir_sequence.xml",
@@ -15,9 +15,11 @@
         "views/lc_type_views.xml",
         "views/account_move_view.xml",
         "views/purchase_order_view.xml",
+        "views/landed_cost_view.xml",
         "views/menu.xml"
 
     ],
     "installable": True,
-    "application": True
+    "application": True,
+    'license': 'LGPL-3',
 }

@@ -1,10 +1,9 @@
-from email.policy import default
-
 from odoo import models, fields, api, _
 
 class LetterOfCredit(models.Model):
     _name = 'lc.management'
     _description = 'Letter of Credit'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(string='Reference', default="New")
     lc_name = fields.Char(string='LC Number', required=True)
@@ -19,22 +18,23 @@ class LetterOfCredit(models.Model):
         ('bdt', 'BDT')
     ], string="Currency Type")
 
-    currency_id = fields.Many2one('res.currency', string="Currency")
-    lc_amount = fields.Monetary(string="Amount in FC", required=True)
-    dollar_rate = fields.Monetary(string="FC Rate in BDT", required=True)
-    bdt_amount = fields.Monetary(string="Amount in BDT", compute='_compute_bdt_amount', required=True)
+    # currency_id = fields.Many2one('res.currency', string="Currency")
+    lc_amount = fields.Float(string="Amount in FC", required=True)
+    dollar_rate = fields.Float(string="FC Rate in BDT", required=True)
+    bdt_amount = fields.Float(string="Amount in BDT", compute='_compute_bdt_amount', required=True)
 
     @api.depends('lc_amount', 'dollar_rate')
     def _compute_bdt_amount(self):
         for record in self:
             record.bdt_amount = record.lc_amount * record.dollar_rate if record.lc_amount and record.dollar_rate else 0.0
 
-    margin_amount = fields.Monetary(string="Margin (%)", required=True)
+    margin_amount = fields.Float(string="Margin (%)", required=True)
     open_date = fields.Date(string="Opening Date", required=True)
     expiry_date = fields.Date(string="Expiry Date", required=True)
     po_ids = fields.Many2many('purchase.order', string="Linked Purchase Orders")
     bill_ids = fields.One2many('account.move', 'lc_id', string="Vendor Bills")
-    document = fields.Binary(string="Document")
+    # document = fields.Binary(string="Document")
+    document = fields.Many2many('ir.attachment', string='Attachments')
     status = fields.Selection([
         ('draft', 'Draft'),
         ('approved', 'Approved'),
@@ -95,9 +95,22 @@ class LetterOfCredit(models.Model):
             'target': 'current',
             'context': {
                 'default_partner_id': self.partner_id.id,
-                'default_currency_id': self.currency_id.id,
-                'default_lc_id': self.id,  # যদি PO-তে lc_id field থাকে
+                'default_lc_id': self.id,
             },
+        }
+
+    def action_create_landed_cost(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Landed Cost',
+            'res_model': 'stock.landed.cost',
+            'view_mode': 'form',
+            'target': 'current',
+            'context': {
+                'default_lc_id': self.id,
+                'default_vendor_id': self.partner_id.id,
+            }
         }
 
 
@@ -108,5 +121,10 @@ class PurchaseOrder(models.Model):
 
 class AccountMove(models.Model):
     _inherit = 'account.move'
+
+    lc_id = fields.Many2one('lc.management', string="Letter of Credit")
+
+class LandedCost(models.Model):
+    _inherit = 'stock.landed.cost'
 
     lc_id = fields.Many2one('lc.management', string="Letter of Credit")
