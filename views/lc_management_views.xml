@@ -53,6 +53,12 @@
                                 icon="fa-truck">
                             <field name="count_landed_cost" widget="statinfo" string="Landed Costs"/>
                         </button>
+                        <button name="action_view_incoming_pickings"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-truck">
+                            <field string="Receipts" name="x_count_receipts" widget="statinfo"/>
+                        </button>
                     </div>
                     <div class="oe_title">
                         <h1 class="d-flex">
