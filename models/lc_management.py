@@ -156,6 +156,12 @@ class PurchaseOrder(models.Model):
 
     lc_id = fields.Many2one('lc.management', string="Letter of Credit")
 
+    def _create_picking(self):
+        res = super()._create_picking()
+        for picking in self.picking_ids:
+            picking.lc_id = self.lc_id.id
+        return res
+
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
@@ -163,5 +169,10 @@ class AccountMove(models.Model):
 
 class LandedCost(models.Model):
     _inherit = 'stock.landed.cost'
+
+    lc_id = fields.Many2one('lc.management', string="Letter of Credit")
+
+class StockPicking(models.Model):
+    _inherit = 'stock.picking'
 
     lc_id = fields.Many2one('lc.management', string="Letter of Credit")
